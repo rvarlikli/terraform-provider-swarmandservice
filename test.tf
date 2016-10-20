@@ -15,5 +15,5 @@ resource "virl_server" "dev" {
     user_name="${var.virl_user_name}"
     password="${var.virl_password}"
     virl_file="example.virl"
- 	simulation_name="ram0001"
+ 	simulation_name="kadir0002"
 }

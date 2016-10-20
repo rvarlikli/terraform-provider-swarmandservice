@@ -4,8 +4,8 @@ import (
 	"bytes"
     "fmt"
     "io"
-    // "io/ioutil"
-    "mime/multipart"
+   "bufio"
+    // "mime/multipart"
     "os"
 
 	"log"
@@ -64,23 +64,19 @@ func resourceServerCreate(d *schema.ResourceData, m interface{}) error {
  port := d.Get("port").(string)
  virl_file := d.Get("virl_file").(string)
  simulation_name := d.Get("simulation_name").(string)
- log.Println("RAGUU1")
   
  d.SetId(address + "!"+user_name+ "!"+password+"!"+port)
 
- 	bodyBuf := &bytes.Buffer{}
-    bodyWriter := multipart.NewWriter(bodyBuf)
+bodyBuf := &bytes.Buffer{}
+//bodyWriter := multipart.NewWriter(bodyBuf)
+bodyWriter:=bufio.NewWriter(bodyBuf)
 
-    filename:= "./"+virl_file
-    targetUrl:= "http://"+address+":"+port+"/simengine/rest/launch?session="+simulation_name
+filename:= "./"+virl_file
+targetUrl:= "http://"+address+":"+port+"/simengine/rest/launch?session="+simulation_name
 
-        // this step is very important
-    fileWriter, err := bodyWriter.CreateFormFile("uploadfile", filename)
-    if err != nil {
-        fmt.Println("error writing to buffer")
-        return err
-    }
-
+    // this step is very important
+//fileWriter, err := bodyWriter.CreateFormFile("uploadfile", filename)
+ 
    
     // open file handle
     fh, err := os.Open(filename)
@@ -90,12 +86,12 @@ func resourceServerCreate(d *schema.ResourceData, m interface{}) error {
     }
  
     //iocopy
-    _, err = io.Copy(fileWriter, fh)
+    _, err = io.Copy(bodyWriter, fh)
     if err != nil {
         return err
     }
   log.Println(bodyBuf)
-  bodyWriter.Close()
+  //bodyWriter.Close()
 
  
    
