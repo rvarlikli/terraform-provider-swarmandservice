@@ -1,11 +1,15 @@
 package main
 
 import (
-	
-	"io/ioutil"
+	"bytes"
+    "fmt"
+    "io"
+    // "io/ioutil"
+    "mime/multipart"
+    "os"
+
 	"log"
 	"net/http"
-
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
@@ -37,45 +41,85 @@ func resourceServer() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
+			"virl_file": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"simulation_name": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
 		},
 	}
 }
+
+ 
+
+
 func resourceServerCreate(d *schema.ResourceData, m interface{}) error {
 
  address := d.Get("address").(string)
  user_name := d.Get("user_name").(string)
  password := d.Get("password").(string)
  port := d.Get("port").(string)
-
+ virl_file := d.Get("virl_file").(string)
+ simulation_name := d.Get("simulation_name").(string)
+ log.Println("RAGUU1")
+  
  d.SetId(address + "!"+user_name+ "!"+password+"!"+port)
+
+ 	bodyBuf := &bytes.Buffer{}
+    bodyWriter := multipart.NewWriter(bodyBuf)
+
+    filename:= "./"+virl_file
+    targetUrl:= "http://"+address+":"+port+"/simengine/rest/launch?session="+simulation_name
+
+        // this step is very important
+    fileWriter, err := bodyWriter.CreateFormFile("uploadfile", filename)
+    if err != nil {
+        fmt.Println("error writing to buffer")
+        return err
+    }
+
+   
+    // open file handle
+    fh, err := os.Open(filename)
+    if err != nil {
+        fmt.Println("error opening file")
+        return err
+    }
+ 
+    //iocopy
+    _, err = io.Copy(fileWriter, fh)
+    if err != nil {
+        return err
+    }
+  log.Println(bodyBuf)
+  bodyWriter.Close()
+
+ 
    
 	client := &http.Client{}
 
+	//virl_template, err := ioutil.ReadFile("templ-lndc-scan-ff.virl")
+	//mody := &virl_template.Buffer{}
+
 	/* Authenticate */
-	req, err := http.NewRequest("GET", "http://"+address+":"+port+"/simengine/rest/launch", nil)
+	req, err := http.NewRequest("POST", targetUrl,bodyBuf)
+	req.Header.Set("Content-Type", "Content-Type:text/xml;charset=UTF-8")
 	req.SetBasicAuth(user_name,password)
+	//req.SetContentType(contentType)
 	res, err := client.Do(req)
-	if err != nil {
-	    log.Fatal(err)
+	
+ 
+	if res.StatusCode == 400 {
+		log.Println("Unexpected status code1", res)
 	}
-
-	// res, err := http.Get("http://10.204.106.107:19400/rest/projects")
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	// read body
-	body, err := ioutil.ReadAll(res.Body)
-	res.Body.Close()
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	if res.StatusCode != 200 {
-		log.Fatal("Unexpected status code", res.StatusCode)
+		log.Fatal("Unexpected status code2", res.StatusCode)
 	}
   
-	log.Printf("Body: %s\n", body)
+	 
 	return nil
 }
 
