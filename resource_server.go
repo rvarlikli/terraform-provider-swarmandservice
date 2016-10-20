@@ -58,21 +58,21 @@ func resourceServer() *schema.Resource {
 
 func resourceServerCreate(d *schema.ResourceData, m interface{}) error {
 
- address := d.Get("address").(string)
- user_name := d.Get("user_name").(string)
- password := d.Get("password").(string)
- port := d.Get("port").(string)
- virl_file := d.Get("virl_file").(string)
- simulation_name := d.Get("simulation_name").(string)
-  
- d.SetId(address + "!"+user_name+ "!"+password+"!"+port)
+ 	address := d.Get("address").(string)
+ 	user_name := d.Get("user_name").(string)
+ 	password := d.Get("password").(string)
+ 	port := d.Get("port").(string)
+ 	virl_file := d.Get("virl_file").(string)
+ 	simulation_name := d.Get("simulation_name").(string)
+ 	 
+ 	d.SetId(address + "!"+user_name+ "!"+password+"!"+port+"!"+simulation_name)
 
-bodyBuf := &bytes.Buffer{}
-//bodyWriter := multipart.NewWriter(bodyBuf)
-bodyWriter:=bufio.NewWriter(bodyBuf)
+	bodyBuf := &bytes.Buffer{}
+	//bodyWriter := multipart.NewWriter(bodyBuf)
+	bodyWriter:=bufio.NewWriter(bodyBuf)
 
-filename:= "./"+virl_file
-targetUrl:= "http://"+address+":"+port+"/simengine/rest/launch?session="+simulation_name
+	filename:= "./"+virl_file
+	targetUrl:= "http://"+address+":"+port+"/simengine/rest/launch?session="+simulation_name
 
     // this step is very important
 //fileWriter, err := bodyWriter.CreateFormFile("uploadfile", filename)
@@ -90,8 +90,8 @@ targetUrl:= "http://"+address+":"+port+"/simengine/rest/launch?session="+simulat
     if err != nil {
         return err
     }
-  log.Println(bodyBuf)
-  //bodyWriter.Close()
+  	log.Println(bodyBuf)
+  	//bodyWriter.Close()
 
  
    
@@ -146,5 +146,35 @@ func resourceServerUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceServerDelete(d *schema.ResourceData, m interface{}) error {
+	log.Println("Raguuuuu")
+	address := d.Get("address").(string)
+ 	user_name := d.Get("user_name").(string)
+ 	password := d.Get("password").(string)
+ 	port := d.Get("port").(string)
+ 	simulation_name := d.Get("simulation_name").(string)
+
+	targetUrl:= "http://"+address+":"+port+"/simengine/rest/stop/"+simulation_name
+
+	client := &http.Client{}
+
+	/* Authenticate */
+	req, err := http.NewRequest("GET", targetUrl,nil)
+	// req.Header.Set("Content-Type", "Content-Type:text/xml;charset=UTF-8")
+	req.SetBasicAuth(user_name,password)
+	//req.SetContentType(contentType)
+	res, err := client.Do(req)
+	
+ 
+	if res.StatusCode == 400 {
+		log.Println("Unexpected status code1", res)
+	}
+	if res.StatusCode != 200 {
+		log.Fatal("Unexpected status code2", res.StatusCode)
+	}
+
+	if err != nil {
+        return err
+    }
+  
 	return nil
 }
