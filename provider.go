@@ -7,7 +7,7 @@ import (
 func Provider() *schema.Provider {
 	return &schema.Provider{
 		ResourcesMap: map[string]*schema.Resource{
-			"virl_server": resourceServer(),
+			"mocker_service": resourceServer(),
 		},
 	}
 }
