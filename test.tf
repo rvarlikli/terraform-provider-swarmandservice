@@ -4,6 +4,15 @@ resource "ciscodocker_service" "dev" {
   image_name="kitematic/hello-world-nginx"
   service_name="hello"
   replica_count=1
-  published_port=8089
-  target_port=80
+  env = ["SERVICE=elastic", "PROJECT=stage", "ENVIRONMENT=operations"]
+  ports = {
+    published = 8089
+    target = 80
+    protocol = "tcp"
+  }
+  ports = {
+    published = 9090
+    target = 8080
+    protocol = "tcp"
+  }
 }

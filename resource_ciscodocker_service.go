@@ -2,25 +2,26 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"io"
-	"bufio"
+	//"io"
+	//"bufio"
 	// "mime/multipart"
-	"os"
+	//"os"
 	//"io/ioutil"
 	"log"
 	"net/http"
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/helper/hashcode"
 	"strconv"
 )
-type Params struct {
-	Count int `url:"count,omitempty"`
-}
-func resourceServer() *schema.Resource {
+//type Params struct {
+//	Count int `url:"count,omitempty"`
+//}
+func resourceCiscoDockerService() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceServerCreate,
-		Read:   resourceServerRead,
-		Update: resourceServerUpdate,
-		Delete: resourceServerDelete,
+		Create: resourceDockerServiceCreate,
+		Read:   resourceDockerServiceRead,
+		Update: resourceDockerServiceUpdate,
+		Delete: resourceDockerServiceDelete,
 		Schema: map[string]*schema.Schema{
 			"api_address": &schema.Schema{
 				Type:     schema.TypeString,
@@ -50,18 +51,46 @@ func resourceServer() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
-			"published_port": &schema.Schema{
-				Type:     schema.TypeInt,
+			"ports": &schema.Schema{
+				Type:     schema.TypeSet,
 				Optional: true,
+				ForceNew: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"published": &schema.Schema{
+							Type:     schema.TypeInt,
+							Required: true,
+							ForceNew: true,
+						},
+
+						"target": &schema.Schema{
+							Type:     schema.TypeInt,
+							Optional: true,
+							ForceNew: true,
+						},
+
+						"protocol": &schema.Schema{
+							Type:     schema.TypeString,
+							Default:  "tcp",
+							Optional: true,
+							ForceNew: true,
+						},
+					},
+				},
+				Set: resourceServicePortsHash,
+
 			},
-			"target_port": &schema.Schema{
-				Type:     schema.TypeInt,
+			"env": &schema.Schema{
+				Type:     schema.TypeSet,
 				Optional: true,
+				ForceNew: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+				Set:      schema.HashString,
 			},
 		},
 	}
 }
-func resourceServerCreate(d *schema.ResourceData, m interface{}) error {
+func resourceDockerServiceCreate(d *schema.ResourceData, m interface{}) error {
 	api_address := d.Get("api_address").(string)
 	image_name := d.Get("image_name").(string)
 	service_name := d.Get("service_name").(string)
@@ -69,9 +98,19 @@ func resourceServerCreate(d *schema.ResourceData, m interface{}) error {
 	api_port := d.Get("api_port").(int)
 	start_command := d.Get("start_command").(string)
 	start_command_args := d.Get("start_command_args").(string)
-	published_port := d.Get("published_port").(int)
-	target_port := d.Get("target_port").(int)
+	portsString := ""
+	envString := ""
 	d.SetId(api_address+":"+strconv.Itoa(api_port)+"/service/"+service_name)
+
+	if v, ok := d.GetOk("ports"); ok {
+		//log.Println("Ports.....", v)
+		portsString = portsConvertToString(v.(*schema.Set))
+		//log.Println("Ports.....", portsString)
+	}
+	if v, ok := d.GetOk("env"); ok {
+		envString = stringSetToStringSlice(v.(*schema.Set))
+		//log.Println("Env.....", envString)
+	}
 
 	if start_command !="" {
 		log.Println("Start command", start_command)
@@ -84,15 +123,15 @@ func resourceServerCreate(d *schema.ResourceData, m interface{}) error {
 
 
 	targetUrl:= "http://"+api_address+":"+strconv.Itoa(api_port)+"/services/create"
-	jsonValue:="{\"Name\":\""+service_name+"\",\"TaskTemplate\":{\"ContainerSpec\":{\"Image\":\""+image_name+"\",\"Command\":["+start_command+"],\"Args\":["+start_command_args+"]},\"Resources\":{\"Limits\":{},\"Reservations\":{}},\"RestartPolicy\":{\"Condition\":\"any\",\"MaxAttempts\":0},\"Placement\":{}},\"Mode\":{\"Replicated\":{\"Replicas\":"+strconv.Itoa(replica_count)+"}},\"UpdateConfig\":{\"Parallelism\":1,\"FailureAction\":\"pause\"},\"EndpointSpec\":{\"Mode\":\"vip\",\"Ports\":[{\"Protocol\":\"tcp\",\"PublishedPort\":"+strconv.Itoa(published_port)+",\"TargetPort\":"+strconv.Itoa(target_port)+"}]}}"
+	jsonValue:="{\"Name\":\""+service_name+"\",\"TaskTemplate\":{\"ContainerSpec\":{\"Image\":\""+image_name+"\",\"Command\":["+start_command+"],\"Args\":["+start_command_args+"],\"Env\":["+envString+"]},\"Resources\":{\"Limits\":{},\"Reservations\":{}},\"RestartPolicy\":{\"Condition\":\"any\",\"MaxAttempts\":0},\"Placement\":{}},\"Mode\":{\"Replicated\":{\"Replicas\":"+strconv.Itoa(replica_count)+"}},\"UpdateConfig\":{\"Parallelism\":1,\"FailureAction\":\"pause\"},\"EndpointSpec\":{\"Mode\":\"vip\",\"Ports\":["+portsString+"]}}"
 	startDockerService(targetUrl,jsonValue)
 	return nil
 }
-func resourceServerRead(d *schema.ResourceData, m interface{}) error {
+func resourceDockerServiceRead(d *schema.ResourceData, m interface{}) error {
 	//     := &Params{Count: 5}
 	return nil
 }
-func resourceServerUpdate(d *schema.ResourceData, m interface{}) error {
+func resourceDockerServiceUpdate(d *schema.ResourceData, m interface{}) error {
 	// Enable partial state mode
 	d.Partial(true)
 	if d.HasChange("image_name") {
@@ -134,7 +173,7 @@ func resourceServerUpdate(d *schema.ResourceData, m interface{}) error {
 	d.Partial(false)
 	return nil
 }
-func resourceServerDelete(d *schema.ResourceData, m interface{}) error {
+func resourceDockerServiceDelete(d *schema.ResourceData, m interface{}) error {
 	api_address := d.Get("api_address").(string)
 	image_name := d.Get("image_name").(string)
 	service_name := d.Get("service_name").(string)
@@ -216,50 +255,64 @@ func updateDockerService(targetUrl string, jsonValue string) error {
 	}
 	return nil
 }
-func startSimulation(localFileName string, targetUrl string, userName string, password string) error{
-	bodyBuf := &bytes.Buffer{}
-	//bodyWriter := multipart.NewWriter(bodyBuf)
-	bodyWriter:=bufio.NewWriter(bodyBuf)
-	fh, err := os.Open(localFileName)
-	if err != nil {
-		fmt.Println("error opening file")
-		return err
+
+func resourceServicePortsHash(v interface{}) int {
+	var buf bytes.Buffer
+	m := v.(map[string]interface{})
+
+	buf.WriteString(fmt.Sprintf("%v-", m["published"].(int)))
+
+	if v, ok := m["target"]; ok {
+		buf.WriteString(fmt.Sprintf("%v-", v.(int)))
 	}
-	//iocopy
-	_, err = io.Copy(bodyWriter, fh)
-	if err != nil {
-		return err
+
+	if v, ok := m["protocol"]; ok {
+		buf.WriteString(fmt.Sprintf("%v-", v.(string)))
 	}
-	log.Println(bodyBuf)
-	client := &http.Client{}
-	/* Authenticate */
-	req, err := http.NewRequest("POST", targetUrl,bodyBuf)
-	req.Header.Set("Content-Type", "Content-Type:text/xml;charset=UTF-8")
-	req.SetBasicAuth(userName,password)
-	//req.SetContentType(contentType)
-	res, err := client.Do(req)
-	if res.StatusCode == 400 {
-		log.Println("Unexpected status code1", res)
-	}
-	if res.StatusCode != 200 {
-		log.Fatal("Unexpected status code2", res.StatusCode)
-	}
-	return nil
+	//log.Println("Start command", hashcode.String(buf.String()))
+	return hashcode.String(buf.String())
 }
-func stopSimulation(targetUrl string, userName string , password string) error {
-	client := &http.Client{}
-	req, err := http.NewRequest("GET", targetUrl,nil)
-	req.SetBasicAuth(userName,password)
-	//req.SetContentType(contentType)
-	res, err := client.Do(req)
-	if res.StatusCode == 400 {
-		log.Println("Unexpected status code1", res)
+
+
+func portsConvertToString(ports *schema.Set) (string) {
+	portString :=""
+	forCount := 0
+	for _, portInt := range ports.List() {
+		forCount++
+		if forCount > 1{
+			portString=portString+","
+		}
+		port := portInt.(map[string]interface{})
+		published := port["published"].(int)
+		target := port["target"].(int)
+		protocol := port["protocol"].(string)
+
+		portString=portString+"{"+
+			"\"Protocol\": \""+protocol+"\","+
+			"\"TargetPort\":"+strconv.Itoa(target)+","+
+			"\"PublishedPort\":"+strconv.Itoa(published)+
+			"}"
 	}
-	if res.StatusCode != 200 {
-		log.Fatal("Unexpected status code2", res.StatusCode)
-	}
-	if err != nil {
-		return err
-	}
-	return nil
+
+	return portString
 }
+
+func stringSetToStringSlice(stringSet *schema.Set) string {
+	envString := ""
+	envCount := 0
+	ret := []string{}
+	if stringSet == nil {
+		return envString
+	}
+	for _, envVal := range stringSet.List() {
+		envCount++
+		if envCount > 1 {
+			envString+=","
+		}
+		envString += "\""+envVal.(string)+"\""
+		ret = append(ret, envVal.(string))
+		log.Println("Env....", envString)
+	}
+	return envString
+}
+
