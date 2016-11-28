@@ -7,7 +7,8 @@ import (
 func Provider() *schema.Provider {
 	return &schema.Provider{
 		ResourcesMap: map[string]*schema.Resource{
-			"ciscodocker_service": resourceServer(),
+			"ciscodocker_service": resourceCiscoDockerService(),
+			"ciscodocker_swarm": resourceCiscoDockerSwarm(),
 		},
 	}
 }
