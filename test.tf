@@ -1,18 +1,24 @@
-resource "ciscodocker_service" "dev" {
+resource "ciscodocker_service" "gitlab-ce" {
   api_address = "192.168.99.100"
   api_port=2375
-  image_name="kitematic/hello-world-nginx"
-  service_name="hello"
+  image_name="gitlab/gitlab-ce"
+  service_name="gitlab"
   replica_count=1
-  env = ["SERVICE=elastic", "PROJECT=stage", "ENVIRONMENT=operations"]
+  env = ["GITLAB_OMNIBUS_CONFIG=\"external_url 'http://nesillocal.com/'; gitlab_rails['gitlab_shell_ssh_port'] = 8922;\""]
   ports = {
-    published = 8089
+    published = 8081
     target = 80
     protocol = "tcp"
   }
   ports = {
-    published = 9090
-    target = 8080
+    published = 8443
+    target = 443
     protocol = "tcp"
   }
+  ports = {
+    published = 8922
+    target = 22
+    protocol = "tcp"
+  }
+
 }
