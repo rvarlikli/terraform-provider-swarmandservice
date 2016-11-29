@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/hashcode"
 	"strconv"
+	"strings"
 )
 //type Params struct {
 //	Count int `url:"count,omitempty"`
@@ -109,7 +110,6 @@ func resourceDockerServiceCreate(d *schema.ResourceData, m interface{}) error {
 	}
 	if v, ok := d.GetOk("env"); ok {
 		envString = stringSetToStringSlice(v.(*schema.Set))
-		//log.Println("Env.....", envString)
 	}
 
 	if start_command !="" {
@@ -300,7 +300,6 @@ func portsConvertToString(ports *schema.Set) (string) {
 func stringSetToStringSlice(stringSet *schema.Set) string {
 	envString := ""
 	envCount := 0
-	ret := []string{}
 	if stringSet == nil {
 		return envString
 	}
@@ -309,8 +308,8 @@ func stringSetToStringSlice(stringSet *schema.Set) string {
 		if envCount > 1 {
 			envString+=","
 		}
-		envString += "\""+envVal.(string)+"\""
-		ret = append(ret, envVal.(string))
+		tmpString:= strings.Replace(envVal.(string),"\"","\\\"",-1)
+		envString += "\""+tmpString+"\""
 		log.Println("Env....", envString)
 	}
 	return envString
