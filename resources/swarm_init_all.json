@@ -1,0 +1,31 @@
+{
+  "ListenAddr": "0.0.0.0:2377",
+  "AdvertiseAddr": "192.168.99.100:2377",
+  "ForceNewCluster": false,
+  "Spec": {
+    "Orchestration": {
+      "TaskHistoryRetentionLimit": 10
+    },
+    "Raft": {
+      "SnapshotInterval": 10000,
+      "KeepOldSnapshots": 2,
+      "LogEntriesForSlowFollowers": 500,
+      "HeartbeatTick": 1,
+      "ElectionTick": 3
+    },
+    "Dispatcher": {
+      "HeartbeatPeriod": 5000000000
+    },
+    "CAConfig": {
+      "NodeCertExpiry": 7776000000000000,
+      "ExternalCA": {
+        "Protocol": "cfssl",
+        "URL": "192.168.1.1",
+        "Options": {
+          "key": "value",
+          "key2": "value2"
+        }
+      }
+    }
+  }
+}

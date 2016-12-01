@@ -1,0 +1,6 @@
+{
+  "ListenAddr": "0.0.0.0:2377",
+  "AdvertiseAddr": "192.168.99.101:2377",
+  "RemoteAddrs": ["manager:2377"],
+  "JoinToken": "SWMTKN-1-57krntzshq7h1jroa93kz82r74ugsn4eq0jakr876gzxtkhxgh-cd7k2n9npms3nkoif5oqp7gcn"
+}
