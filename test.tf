@@ -4,7 +4,7 @@ resource "ciscodocker_service" "gitlab-ce" {
   image_name="gitlab/gitlab-ce"
   service_name="gitlab"
   replica_count=1
-  env = ["GITLAB_OMNIBUS_CONFIG=\"external_url 'http://nesillocal.com/'; gitlab_rails['gitlab_shell_ssh_port'] = 8922;\""]
+  env = ["GITLAB_OMNIBUS_CONFIG=\"external_url 'http://nesillocal.com:8081/'; gitlab_rails['gitlab_shell_ssh_port'] = 8922;\""]
   ports = {
     published = 8081
     target = 80

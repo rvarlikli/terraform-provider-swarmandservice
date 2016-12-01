@@ -88,6 +88,14 @@ func resourceCiscoDockerService() *schema.Resource {
 				Elem:     &schema.Schema{Type: schema.TypeString},
 				Set:      schema.HashString,
 			},
+			"service_id": &schema.Schema{
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+			"version_number": &schema.Schema{
+				Type:     schema.TypeInt,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -128,7 +136,16 @@ func resourceDockerServiceCreate(d *schema.ResourceData, m interface{}) error {
 	return nil
 }
 func resourceDockerServiceRead(d *schema.ResourceData, m interface{}) error {
-	//     := &Params{Count: 5}
+	api_address := d.Get("api_address").(string)
+	api_port := d.Get("api_port").(int)
+	service_name := d.Get("service_name").(string)
+	targetUrl:= "http://"+api_address+":"+strconv.Itoa(api_port)+"/services/"+service_name
+	getDockerService(targetUrl)
+
+	d.Set("service_id", "test")
+	d.Set("version_number", 538)
+
+
 	return nil
 }
 func resourceDockerServiceUpdate(d *schema.ResourceData, m interface{}) error {
@@ -184,6 +201,35 @@ func resourceDockerServiceDelete(d *schema.ResourceData, m interface{}) error {
 	removeDockerService(targetUrl)
 	return nil
 }
+func getDockerService(targetUrl string) error {
+	client := &http.Client{}
+	/* Authenticate */
+	req, err := http.NewRequest("GET", targetUrl,nil)
+	log.Println("Request error.....", err)
+	req.Header.Set("Content-Type", "Content-Type:text/xml;charset=UTF-8")
+
+	res, err := client.Do(req)
+	if res.StatusCode == 409 {
+		log.Println("Existing service", res)
+	}
+	if res.StatusCode == 406 {
+		log.Println("Server error or node is not part of swarm", res)
+	}
+	if res.StatusCode != 200 {
+		log.Fatal("Unexpected status code...", res.StatusCode)
+		log.Fatal("Unexpected error....", res)
+	}
+	if res.StatusCode == 200 {
+		log.Println("Response......", res)
+		// TODO: get version number and service id from response
+
+	}
+	if err != nil {
+		return  err
+	}
+	return nil
+}
+
 func startDockerService(targetUrl string, jsonValue string) error {
 	bodyBuf := &bytes.Buffer{}
 	//bodyWriter := multipart.NewWriter(bodyBuf)
