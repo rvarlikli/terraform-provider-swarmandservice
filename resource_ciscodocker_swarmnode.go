@@ -45,7 +45,6 @@ func resourceCiscoDockerSwarmNode() *schema.Resource {
 				Optional: true,
 				Default:  false,
 			},
-
 			"swarm_manager_token":&schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,

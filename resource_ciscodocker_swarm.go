@@ -11,7 +11,14 @@ import (
 	"net/http"
 	"github.com/hashicorp/terraform/helper/schema"
 	"strconv"
+	"encoding/json"
 )
+
+type SwarmInfo struct {
+	ManagerToken string
+	WorkerToken string
+	SwarmId string
+}
 
 func resourceCiscoDockerSwarm() *schema.Resource {
 	return &schema.Resource{
@@ -24,6 +31,10 @@ func resourceCiscoDockerSwarm() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
+			"api_port": &schema.Schema{
+				Type:     schema.TypeInt,
+				Required: true,
+			},
 			"listen_address": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
@@ -32,15 +43,19 @@ func resourceCiscoDockerSwarm() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"api_port": &schema.Schema{
-				Type:     schema.TypeInt,
-				Required: true,
-			},
 			"force_new": &schema.Schema{
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  true,
 			},
+			"task_history_retention_limit": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+				Default:  10,
+			},
+
+
+
 
 		},
 	}
@@ -52,10 +67,15 @@ func resourceDockerSwarmCreate(d *schema.ResourceData, m interface{}) error {
 	advertise_address := d.Get("advertise_address").(string)
 	force_new := d.Get("force_new").(bool)
 
-	d.SetId(api_address+":"+strconv.Itoa(api_port)+"/swarm/init")
 	targetUrl:= "http://"+api_address+":"+strconv.Itoa(api_port)+"/swarm/init"
 	jsonValue:="{\"ListenAddr\":\""+listen_address+"\",\"AdvertiseAddr\":\""+advertise_address+"\",\"ForceNewCluster\":"+strconv.FormatBool(force_new)+",\"Spec\":{\"Orchestration\":{},\"Raft\":{},\"Dispatcher\":{},\"CAConfig\":{}}}"
 	initDockerSwarm(targetUrl,jsonValue)
+	log.Println("Swarm created............")
+
+	getDockerSwarm("http://"+api_address+":"+strconv.Itoa(api_port)+"/swarm")
+
+
+	d.SetId(api_address+":"+strconv.Itoa(api_port)+"/swarm/init")
 	return nil
 }
 func resourceDockerSwarmRead(d *schema.ResourceData, m interface{}) error {
@@ -92,6 +112,7 @@ func resourceDockerSwarmDelete(d *schema.ResourceData, m interface{}) error {
 	removeDockerService(targetUrl)
 	return nil
 }
+
 func initDockerSwarm(targetUrl string, jsonValue string) error {
 	bodyBuf := &bytes.Buffer{}
 	//bodyWriter := multipart.NewWriter(bodyBuf)
@@ -116,6 +137,36 @@ func initDockerSwarm(targetUrl string, jsonValue string) error {
 	}
 	return nil
 }
+
+func getDockerSwarm(targetUrl string) (interface{},error) {
+	swarmInfo:= new(SwarmInfo)
+	swarmInfo.ManagerToken ="ManagerToken"
+	swarmInfo.WorkerToken = "WorkerToken"
+	swarmInfo.SwarmId = "538"
+	client := &http.Client{}
+	/* Authenticate */
+	req, err := http.NewRequest("GET", targetUrl,nil)
+	log.Println("Request error.....", err)
+	req.Header.Set("Content-Type", "Content-Type:text/xml;charset=UTF-8")
+
+	res, err := client.Do(req)
+
+	if res.StatusCode != 200 {
+		log.Fatal("Unexpected status code...", res.StatusCode)
+		log.Fatal("Unexpected error....", res)
+	}
+	if res.StatusCode == 200 {
+
+		log.Println("Response Body......", res.Body)
+		// TODO: get version number and service id from response
+
+	}
+	if err != nil {
+		return  swarmInfo,err
+	}
+	return swarmInfo,nil
+}
+
 func removeDockerSwarm(targetUrl string) error {
 	client := &http.Client{}
 	req, err := http.NewRequest("DELETE", targetUrl,nil)
@@ -137,6 +188,7 @@ func removeDockerSwarm(targetUrl string) error {
 	}
 	return nil
 }
+
 func updateDockerSwarm(targetUrl string, jsonValue string) error {
 	bodyBuf := &bytes.Buffer{}
 	//bodyWriter := multipart.NewWriter(bodyBuf)
@@ -161,3 +213,13 @@ func updateDockerSwarm(targetUrl string, jsonValue string) error {
 	}
 	return nil
 }
+
+//func getJson(url string) error {
+//	r, err := http.Get(url)
+//	if err != nil {
+//		return err
+//	}
+//	defer r.Body.Close()
+//
+//	return json.NewDecoder(r.Body)
+//}
