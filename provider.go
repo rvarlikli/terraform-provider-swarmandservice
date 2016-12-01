@@ -9,6 +9,7 @@ func Provider() *schema.Provider {
 		ResourcesMap: map[string]*schema.Resource{
 			"ciscodocker_service": resourceCiscoDockerService(),
 			"ciscodocker_swarm": resourceCiscoDockerSwarm(),
+			"ciscodocker_swarmnode": resourceCiscoDockerSwarmNode(),
 		},
 	}
 }
