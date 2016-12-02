@@ -12,13 +12,8 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"strconv"
 	"encoding/json"
+	"github.com/docker/docker/api/types/swarm"
 )
-
-type SwarmInfo struct {
-	ManagerToken string
-	WorkerToken string
-	SwarmId string
-}
 
 func resourceCiscoDockerSwarm() *schema.Resource {
 	return &schema.Resource{
@@ -138,11 +133,8 @@ func initDockerSwarm(targetUrl string, jsonValue string) error {
 	return nil
 }
 
-func getDockerSwarm(targetUrl string) (interface{},error) {
-	swarmInfo:= new(SwarmInfo)
-	swarmInfo.ManagerToken ="ManagerToken"
-	swarmInfo.WorkerToken = "WorkerToken"
-	swarmInfo.SwarmId = "538"
+func getDockerSwarm(targetUrl string) error {
+
 	client := &http.Client{}
 	/* Authenticate */
 	req, err := http.NewRequest("GET", targetUrl,nil)
@@ -157,14 +149,19 @@ func getDockerSwarm(targetUrl string) (interface{},error) {
 	}
 	if res.StatusCode == 200 {
 
-		log.Println("Response Body......", res.Body)
 		// TODO: get version number and service id from response
 
+
 	}
+
+	swarmInfo:= swarm.Swarm{}
+	defer res.Body.Close()
+	log.Println("KADİRRRRRRR......", json.NewDecoder(res.Body).Decode(&swarmInfo))
+
 	if err != nil {
-		return  swarmInfo,err
+		return  err
 	}
-	return swarmInfo,nil
+	return nil
 }
 
 func removeDockerSwarm(targetUrl string) error {
@@ -214,12 +211,15 @@ func updateDockerSwarm(targetUrl string, jsonValue string) error {
 	return nil
 }
 
-//func getJson(url string) error {
-//	r, err := http.Get(url)
-//	if err != nil {
-//		return err
-//	}
-//	defer r.Body.Close()
-//
-//	return json.NewDecoder(r.Body)
-//}
+func getJson(url string, target interface{}) error {
+	r, err := http.Get(url)
+	log.Println("Get json body", r.Body)
+	log.Println("Get json error", err)
+
+	if err != nil {
+		return err
+	}
+	defer r.Body.Close()
+
+	return json.NewDecoder(r.Body).Decode(target)
+}
