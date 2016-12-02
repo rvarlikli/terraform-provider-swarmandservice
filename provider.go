@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/terraform"
+	"fmt"
 )
 
 func Provider() *schema.Provider {
