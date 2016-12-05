@@ -29,7 +29,7 @@ func resourceCiscoDockerSwarm() *schema.Resource {
 			"force_new_cluster": &schema.Schema{
 				Type:     schema.TypeBool,
 				Optional: true,
-				Default: true,
+				Default: false,
 			},
 			"auto_lock_managers": &schema.Schema{
 				Type:     schema.TypeString,
@@ -96,6 +96,11 @@ func resourceCiscoDockerSwarm() *schema.Resource {
 				Default: false,
 			},
 			"rotate_manager_token": &schema.Schema{
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default: false,
+			},
+			"force_leave": &schema.Schema{
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default: false,

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	//"strconv"
 	"time"
+	"log"
 
 	dc "github.com/fsouza/go-dockerclient"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -25,27 +26,47 @@ func resourceDockerSwarmInit(d *schema.ResourceData, meta interface{}) error {
 	var err error
 	client := meta.(*dc.Client)
 
-	orchestrationConfig := swarm.OrchestrationConfig{
-		TaskHistoryRetentionLimit: d.Get("task_history_retention_limit").(*int64),
+	var orchestrationConfig swarm.OrchestrationConfig
+	if v, ok := d.GetOk("task_history_retention_limit"); ok {
+		limit := int64(v.(int))
+		orchestrationConfig.TaskHistoryRetentionLimit = &limit
 	}
 
-	raftConfig := swarm.RaftConfig{
-		SnapshotInterval: d.Get("snapshot_interval").(uint64),
-		KeepOldSnapshots: d.Get("keep_old_snapshots").(*uint64),
-		LogEntriesForSlowFollowers: d.Get("log_entries_for_slow_followers").(uint64),
-		ElectionTick: d.Get("election_tick").(int),
-		HeartbeatTick: d.Get("heartbeat_tick").(int),
+	var raftConfig swarm.RaftConfig
+	if v, ok := d.GetOk("snapshot_interval"); ok {
+		interval := uint64(v.(int))
+		raftConfig.SnapshotInterval = interval
+	}
+	if v, ok := d.GetOk("keep_old_snapshots"); ok {
+		snapshots := uint64(v.(int))
+		raftConfig.KeepOldSnapshots = &snapshots
+	}
+	if v, ok := d.GetOk("log_entries_for_slow_followers"); ok {
+		followers := uint64(v.(int))
+		raftConfig.LogEntriesForSlowFollowers = followers
+	}
+	if v, ok := d.GetOk("election_tick"); ok {
+		election := v.(int)
+		raftConfig.ElectionTick = election
+	}
+	if v, ok := d.GetOk("heartbeat_tick"); ok {
+		heartbeat := v.(int)
+		raftConfig.HeartbeatTick = heartbeat
 	}
 
-	dispatcherConfig := swarm.DispatcherConfig{
-		HeartbeatPeriod: d.Get("heartbeat_period").(time.Duration),
+	var dispatcherConfig swarm.DispatcherConfig
+	if v, ok := d.GetOk("heartbeat_period"); ok {
+		heartbeat := time.Duration(v.(int))
+		dispatcherConfig.HeartbeatPeriod = heartbeat
 	}
 
-	caConfig := swarm.CAConfig{
-		NodeCertExpiry: d.Get("node_cert_expiry").(time.Duration),
-		// TODO: externalCAs section
-		//ExternalCAs:
+
+	var caConfig swarm.CAConfig
+	if v, ok := d.GetOk("node_cert_expiry"); ok {
+		expiry := time.Duration(v.(int))
+		caConfig.NodeCertExpiry = expiry
 	}
+
 
 	taskDefaults := swarm.TaskDefaults{
 		// TODO: LogDriver section
@@ -63,6 +84,7 @@ func resourceDockerSwarmInit(d *schema.ResourceData, meta interface{}) error {
 		//	AutoLockManagers: d.get("auto_lock_managers").(bool),
 		//},
 	}
+
 
 	swarInitRequest := swarm.InitRequest{
 		ListenAddr: d.Get("listen_address").(string),
@@ -82,6 +104,8 @@ func resourceDockerSwarmInit(d *schema.ResourceData, meta interface{}) error {
 		ctx,
 	}
 
+	log.Println("initSwarmOptions............")
+
 	var swarmResp string
 	if swarmResp, err = client.InitSwarm(initSwarmOptions); err != nil {
 		return fmt.Errorf("Unable to init swarm: %s", err)
@@ -91,13 +115,15 @@ func resourceDockerSwarmInit(d *schema.ResourceData, meta interface{}) error {
 	}
 
 
-	initionErr := resourceDockerSwarmInspect(d, meta)
-	if initionErr != nil {
-		return fmt.Errorf("Returned swarm inition: %s", initionErr)
+	inspectErr := resourceDockerSwarmInspect(d, meta)
+	if inspectErr != nil {
+		return fmt.Errorf("Returned swarm inition: %s", inspectErr)
 	}
 
+	d.Set("manager_token", initiedSwarm.JoinTokens.Manager)
+	d.Set("worker_token", initiedSwarm.JoinTokens.Worker)
+	d.Set("version", initiedSwarm.ClusterInfo.Meta.Version.Index)
 	d.SetId(initiedSwarm.ClusterInfo.ID)
-
 	return nil
 }
 
@@ -119,28 +145,96 @@ func resourceDockerSwarmInspect(d *schema.ResourceData, meta interface{}) error 
 }
 
 func resourceDockerSwarmUpdate(d *schema.ResourceData, meta interface{}) error {
+	var err error
+	client := meta.(*dc.Client)
+
+	var orchestrationConfig swarm.OrchestrationConfig
+	if v, ok := d.GetOk("task_history_retention_limit"); ok {
+		limit := int64(v.(int))
+		orchestrationConfig.TaskHistoryRetentionLimit = &limit
+	}
+
+	var raftConfig swarm.RaftConfig
+	if v, ok := d.GetOk("snapshot_interval"); ok {
+		interval := uint64(v.(int))
+		raftConfig.SnapshotInterval = interval
+	}
+	if v, ok := d.GetOk("keep_old_snapshots"); ok {
+		snapshots := uint64(v.(int))
+		raftConfig.KeepOldSnapshots = &snapshots
+	}
+	if v, ok := d.GetOk("log_entries_for_slow_followers"); ok {
+		followers := uint64(v.(int))
+		raftConfig.LogEntriesForSlowFollowers = followers
+	}
+	if v, ok := d.GetOk("election_tick"); ok {
+		election := v.(int)
+		raftConfig.ElectionTick = election
+	}
+	if v, ok := d.GetOk("heartbeat_tick"); ok {
+		heartbeat := v.(int)
+		raftConfig.HeartbeatTick = heartbeat
+	}
+
+	var dispatcherConfig swarm.DispatcherConfig
+	if v, ok := d.GetOk("heartbeat_period"); ok {
+		heartbeat := time.Duration(v.(int))
+		dispatcherConfig.HeartbeatPeriod = heartbeat
+	}
+
+
+	var caConfig swarm.CAConfig
+	if v, ok := d.GetOk("node_cert_expiry"); ok {
+		expiry := time.Duration(v.(int))
+		caConfig.NodeCertExpiry = expiry
+	}
+
+
+	taskDefaults := swarm.TaskDefaults{
+		// TODO: LogDriver section
+		//LogDriver: d.get("log_driver").(string),
+	}
+
+
+
+
+	swarmUpdateSpec := swarm.Spec{
+		Orchestration: orchestrationConfig,
+		Raft: raftConfig,
+		Dispatcher: dispatcherConfig,
+		CAConfig: caConfig,
+		TaskDefaults: taskDefaults,
+		//  TODO: EncryptionConfig section
+		//EncryptionConfig: &swarm.EncryptionConfig{
+		//	AutoLockManagers: d.get("auto_lock_managers").(bool),
+		//},
+	}
+
+
+	updateSwarmOptions := dc.UpdateSwarmOptions{
+		Version : d.Get("version").(int),
+		RotateWorkerToken: d.Get("rotate_worker_token").(bool),
+		RotateManagerToken: d.Get("rotate_manager_token").(bool),
+		Swarm: swarmUpdateSpec,
+		ctx,
+	}
+
+
 	return nil
 }
 
 func resourceDockerSwarmLeave(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*dc.Client)
 
-	// Stop the container before removing if destroy_grace_seconds is defined
-	if d.Get("destroy_grace_seconds").(int) > 0 {
-		var timeout = uint(d.Get("destroy_grace_seconds").(int))
-		if err := client.StopContainer(d.Id(), timeout); err != nil {
-			return fmt.Errorf("Error stopping container %s: %s", d.Id(), err)
-		}
+	force_leave := d.Get("force_leave").(bool)
+
+	leaveSwarmOptions := dc.LeaveSwarmOptions{
+		force_leave,
+		ctx,
 	}
 
-	removeOpts := dc.RemoveContainerOptions{
-		ID:            d.Id(),
-		RemoveVolumes: true,
-		Force:         true,
-	}
-
-	if err := client.RemoveContainer(removeOpts); err != nil {
-		return fmt.Errorf("Error deleting container %s: %s", d.Id(), err)
+	if leaveErr := client.LeaveSwarm(leaveSwarmOptions); leaveErr != nil {
+		return fmt.Errorf("Unable to leave swarm: %s", leaveErr)
 	}
 
 	d.SetId("")
