@@ -27,7 +27,7 @@ func resourceCiscoDockerSwarm() *schema.Resource {
 				ForceNew: true,
 			},
 			"force_new_cluster": &schema.Schema{
-				Type:     schema.TypeString,
+				Type:     schema.TypeBool,
 				Optional: true,
 				Default: true,
 			},
@@ -78,6 +78,29 @@ func resourceCiscoDockerSwarm() *schema.Resource {
 				ForceNew: true,
 				Default: 7776000000000000,
 			},
+			"manager_token": &schema.Schema{
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+			"worker_token": &schema.Schema{
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+			"version": &schema.Schema{
+				Type:     schema.TypeInt,
+				Computed: true,
+			},
+			"rotate_worker_token": &schema.Schema{
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default: false,
+			},
+			"rotate_manager_token": &schema.Schema{
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default: false,
+			},
+
 
 		},
 	}
