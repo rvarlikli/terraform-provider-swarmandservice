@@ -284,10 +284,28 @@ func resourceDockerServiceCreate(d *schema.ResourceData, meta interface{}) error
 
 	d.SetId(createdService.ID)
 
+	inspectErr := resourceDockerServiceInspect(d, meta)
+	if inspectErr != nil {
+		return fmt.Errorf("Returned service inpect: %s", inspectErr)
+	}
+
+
+
 	return nil
 }
 
 func resourceDockerServiceInspect(d *schema.ResourceData, meta interface{}) error {
+
+	client := meta.(*dc.Client)
+
+	var service *swarm.Service
+	var err error
+
+	if service, err = client.InspectService(d.Id()); err != nil {
+		return fmt.Errorf("Error inspecting service: %s", err)
+	}
+
+	d.Set("service_version", service.Meta.Version.Index)
 	return nil
 }
 
@@ -296,6 +314,19 @@ func resourceDockerServiceUpdate(d *schema.ResourceData, meta interface{}) error
 }
 
 func resourceDockerServiceRemove(d *schema.ResourceData, meta interface{}) error {
+
+	client := meta.(*dc.Client)
+
+	removeServiceOptions := dc.RemoveServiceOptions{
+		d.Id(),
+		serviceCtx,
+	}
+
+	if err := client.RemoveService(removeServiceOptions); err != nil {
+		return fmt.Errorf("Unable to remove service: %s", err)
+	}
+
+	d.SetId("")
 	return nil
 }
 
