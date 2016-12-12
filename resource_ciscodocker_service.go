@@ -235,6 +235,10 @@ func resourceCiscoDockerService() *schema.Resource {
 				},
 				Set: resourceDockerPortsHash,
 			},
+			"service_version": &schema.Schema{
+				Type:     schema.TypeInt,
+				Computed: true,
+			},
 
 		},
 	}
