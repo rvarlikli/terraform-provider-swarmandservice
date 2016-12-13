@@ -24,7 +24,6 @@ func resourceCiscoDockerService() *schema.Resource {
 			"service_labels": &schema.Schema{
 				Type:     schema.TypeMap,
 				Optional: true,
-				ForceNew: true,
 			},
 			"image_name": &schema.Schema{
 				Type:     schema.TypeString,
@@ -34,18 +33,15 @@ func resourceCiscoDockerService() *schema.Resource {
 			"container_labels": &schema.Schema{
 				Type:     schema.TypeMap,
 				Optional: true,
-				ForceNew: true,
 			},
 			"command": &schema.Schema{
 				Type:     schema.TypeList,
 				Optional: true,
-				ForceNew: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
 			"args": &schema.Schema{
 				Type:     schema.TypeList,
 				Optional: true,
-				ForceNew: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
 			"hostname": &schema.Schema{
@@ -56,23 +52,19 @@ func resourceCiscoDockerService() *schema.Resource {
 			"env": &schema.Schema{
 				Type:     schema.TypeList,
 				Optional: true,
-				ForceNew: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
 			"dir": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
-				ForceNew: true,
 			},
 			"user": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
-				ForceNew: true,
 			},
 			"groups": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
-				ForceNew: true,
 			},
 			"tty": &schema.Schema{
 				Type:     schema.TypeBool,
@@ -108,7 +100,6 @@ func resourceCiscoDockerService() *schema.Resource {
 			"restart_policy_condition": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
-				ForceNew: true,
 				Default:  "any",
 				ValidateFunc: func(v interface{}, k string) (ws []string, es []error) {
 					value := v.(string)
@@ -138,7 +129,6 @@ func resourceCiscoDockerService() *schema.Resource {
 			"placement": &schema.Schema{
 				Type:     schema.TypeList,
 				Optional: true,
-				ForceNew: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
 			"is_global_service": &schema.Schema{
