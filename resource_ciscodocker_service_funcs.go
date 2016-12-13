@@ -132,46 +132,48 @@ func resourceDockerServiceCreate(d *schema.ResourceData, meta interface{}) error
 	log.Println("resources_reservations_memory_bytes")
 
 
-	// restart policy
-	//if v, ok := d.GetOk("restart_policy_condition"); ok {
-	//	if v.(string) == "none" {
-	//		log.Println(swarm.RestartPolicyConditionNone)
-	//		restartPolicy.Condition = swarm.RestartPolicyConditionNone
-	//	}
-	//	if v.(string) == "on-failure" {
-	//		restartPolicy.Condition = swarm.RestartPolicyConditionOnFailure
-	//	}
-	//	if v.(string) == "any" {
-	//		var contidition swarm.RestartPolicyCondition = swarm.RestartPolicyCondition(v.(string))
-	//		restartPolicy.Condition = contidition
-	//	}
-	//}
+	 //restart policy
+	var restartPolicy swarm.RestartPolicy
 
-	//log.Println("restart_policy_condition")
+	if v, ok := d.GetOk("restart_policy_condition"); ok {
+		var condition swarm.RestartPolicyCondition
+		if v.(string) == "none" {
+			condition = swarm.RestartPolicyConditionNone
+		}
+		if v.(string) == "on-failure" {
+			condition = swarm.RestartPolicyConditionOnFailure
+		}
+		if v.(string) == "any" {
+			condition = swarm.RestartPolicyConditionAny
+		}
+		restartPolicy.Condition = condition
+	}
 
-
-	//if v, ok := d.GetOk("restart_policy_delay"); ok {
-	//	delay := time.Duration(v.(int))
-	//	restartPolicy.Delay = &delay
-	//}
+	log.Println("restart_policy_condition")
 
 
-	//log.Println("restart_policy_delay")
+	if v, ok := d.GetOk("restart_policy_delay"); ok {
+		delay := time.Duration(v.(int))
+		restartPolicy.Delay = &delay
+	}
 
 
-	//if v, ok := d.GetOk("restart_policy_attempts"); ok {
-	//	attempts := uint64(v.(int))
-	//	restartPolicy.MaxAttempts = &attempts
-	//}
-
-	//log.Println("restart_policy_attempts")
+	log.Println("restart_policy_delay")
 
 
-	//if v, ok := d.GetOk("restart_policy_window"); ok {
-	//	window := time.Duration(v.(int))
-	//	restartPolicy.Window = &window
-	//}
-	//taskTemplate.RestartPolicy = restartPolicy
+	if v, ok := d.GetOk("restart_policy_attempts"); ok {
+		attempts := uint64(v.(int))
+		restartPolicy.MaxAttempts = &attempts
+	}
+
+	log.Println("restart_policy_attempts")
+
+
+	if v, ok := d.GetOk("restart_policy_window"); ok {
+		window := time.Duration(v.(int))
+		restartPolicy.Window = &window
+	}
+	taskTemplate.RestartPolicy = &restartPolicy
 
 	//placement
 
@@ -243,15 +245,16 @@ func resourceDockerServiceCreate(d *schema.ResourceData, meta interface{}) error
 	//EndpointSpec
 
 	var endpointSpec swarm.EndpointSpec
-	//TODO: resolution mode section
-	//if v, ok := d.GetOk("resolution_mode"); ok {
-	//	if v.(string) == "vip" {
-	//		serviceSpec.EndpointSpec.Mode = swarm.ResolutionModeVIP
-	//	}
-	//	if v.(string) == "dnsrr" {
-	//		serviceSpec.EndpointSpec.Mode = swarm.ResolutionModeDNSRR
-	//	}
-	//}
+	if v, ok := d.GetOk("resolution_mode"); ok {
+		var mode swarm.ResolutionMode
+		if v.(string) == "vip" {
+			mode = swarm.ResolutionModeVIP
+		}
+		if v.(string) == "dnsrr" {
+			mode = swarm.ResolutionModeDNSRR
+		}
+		endpointSpec.Mode = mode
+	}
 
 	portConfigs := []swarm.PortConfig{}
 
