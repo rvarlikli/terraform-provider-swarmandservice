@@ -6,12 +6,24 @@ The provider creates Docker Swarm clusters and services.
 
 -[Terraform]
 
+-[Go]
+
 #### Steps
 1-) Clone the repo and cd to redo dir
+
+2-) Set GOPATH
+
+`export GOPATH=/repo/dir`
 
 2-) Get provider dependencies
 
 `go get github.com/hashicorp/terraform/helper/schema`
+
+`go get github.com/docker/docker/api/types/swarm`
+
+`go get github.com/fsouza/go-dockerclient`
+
+github.com/docker
 
 3-) Build the provider with name
 
@@ -20,6 +32,7 @@ The provider creates Docker Swarm clusters and services.
 4-) Create Docker host machine(s) for Docker Swarm Cluster
 
 `docker-machine create --driver virtualbox manager1`
+
 `docker-machine create --driver virtualbox node1`
 
 5-) Create Swarm Cluster and Docker Services with terraform
@@ -44,4 +57,5 @@ Official [GitLab] image
    [terraform]: <https://www.terraform.io/downloads.html>
    [spring-boot-rest-example]: <https://github.com/rvarlikli/spring-boot-rest-example>
    [Gitlab]: <https://hub.docker.com/r/gitlab/gitlab-ce/>
+   [Go]: <https://golang.org/dl/>
    
