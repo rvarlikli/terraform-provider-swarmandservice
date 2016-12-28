@@ -19,11 +19,13 @@ The provider creates Docker Swarm clusters and services.
 
 `go get github.com/hashicorp/terraform/helper/schema`
 
+
 `go get github.com/docker/docker/api/types/swarm`
+
 
 `go get github.com/fsouza/go-dockerclient`
 
-github.com/docker
+
 
 3-) Build the provider with name
 
