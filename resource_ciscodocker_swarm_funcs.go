@@ -157,32 +157,26 @@ func resourceDockerSwarmUpdate(d *schema.ResourceData, meta interface{}) error {
 	}
 	if d.HasChange("snapshot_interval") {
 		d.GetChange("snapshot_interval")
-
 		d.SetPartial("snapshot_interval")
 	}
 	if d.HasChange("keep_old_snapshots") {
 		d.GetChange("keep_old_snapshots")
-
 		d.SetPartial("keep_old_snapshots")
 	}
 	if d.HasChange("log_entries_for_slow_followers") {
 		d.GetChange("log_entries_for_slow_followers")
-
 		d.SetPartial("log_entries_for_slow_followers")
 	}
 	if d.HasChange("election_tick") {
 		d.GetChange("election_tick")
-
 		d.SetPartial("election_tick")
 	}
 	if d.HasChange("heartbeat_tick") {
-
-
+		d.GetChange("heartbeat_tick")
 		d.SetPartial("heartbeat_tick")
 	}
 	if d.HasChange("heartbeat_period") {
 		d.GetChange("heartbeat_period")
-
 		d.SetPartial("heartbeat_period")
 	}
 	if d.HasChange("node_cert_expiry") {
